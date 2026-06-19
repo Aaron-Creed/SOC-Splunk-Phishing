@@ -1,67 +1,80 @@
 # 🛡️ SOC Investigation Lab: Phishing Triaging & SIEM Correlation with Splunk
 
 ## 📝 Introducción
-Este repositorio contiene la documentación y el análisis técnico de dos alertas gestionadas en un entorno simulado de Centro de Operaciones de Seguridad (SOC). El objetivo principal de este laboratorio fue realizar el triaje de alertas de correo electrónico entrante, investigar los Indicadores de Compromiso (IOCs) y correlacionar la telemetría en **Splunk** para determinar el impacto real en los endpoints de la organización.
+Este repositorio contiene la documentación y el análisis técnico de incidentes gestionados en un entorno simulado de Centro de Operaciones de Seguridad (SOC) de TryHackMe. El objetivo principal de la investigación fue realizar el triaje de alertas de correo electrónico entrante en una cola de incidentes, investigar los Indicadores de Compromiso (IOCs) y correlacionar la telemetría utilizando **Splunk** para determinar el impacto real en los endpoints de la organización.
 
 ---
 
 ## 🛠️ Habilidades y Herramientas Demostradas
-*   **SIEM:** Splunk (Búsqueda, filtrado y correlación de eventos).
-*   **Análisis de Logs:** Interpretación de estructuras JSON provenientes de fuentes de correo y firewall.
-*   **Investigación de Amenazas:** Análisis de reputación de dominios, tácticas de ingeniería social y técnicas de *typosquatting*.
-*   **Clasificación de Incidentes:** Determinación de Falsos Positivos (FP) y Verdaderos Positivos (TP).
+*   **SIEM:** Splunk (Búsqueda, filtrado y correlación cruzada de eventos).
+*   **Análisis de Logs:** Interpretación de estructuras JSON provenientes de fuentes de correo y firewalls.
+*   **Investigación de Amenazas:** Identificación de tácticas de ingeniería social y técnicas de suplantación de identidad (*Typosquatting*).
+*   **Gestión de Alertas:** Clasificación técnica de incidentes (Falsos Positivos frente a Verdaderos Positivos).
 
 ---
 
 ## 🔍 Caso 1: Análisis de Falso Positivo (Plataforma HR)
 
 ### 🚨 Alerta Inicial
+La cola de alertas detectó un evento relacionado con un enlace externo sospechoso entrante.
+
 *   **ID de Alerta:** 8814
-*   **Clasificación:** Medium - Phishing
-*   **Asunto:** `Action Required: Finalize Your Onboarding Profile`
+*   **Regla:** Inbound Email Containing Suspicious External Link
+*   **Gravedad:** Medium
 *   **Remitente:** `onboarding@hrconnex.thm`
 *   **Destinatario:** `j.garcia@thetrydaily.thm`
 
+![Cola de Alertas - Caso 1](Caso N° 1.png)
+
 ### 🕵️‍♂️ Investigación y Análisis de Logs
-Al revisar la cola de alertas, se identificó un correo dirigido a un empleado de la empresa que contenía un enlace hacia el dominio `hrconnex.thm`. 
+Al inspeccionar los registros indexados en Splunk para el dominio `hrconnex.thm`, localizamos el correo electrónico original que gatilló el evento:
 
-Se procedió a realizar una búsqueda exhaustiva en Splunk utilizando el IOC (`hrconnex.thm`). Durante la inspección del panel lateral de campos interesantes (**Interesting Fields**), se determinó que el campo `datasource` tenía un valor de `1`, correspondiendo únicamente a registros de tipo `email`. Esto confirmó matemáticamente la **ausencia de logs de firewall**, lo que significa que el usuario nunca interactuó ni hizo clic en el enlace.
+![Log del Correo Recibido](Caso%201%20327.png)
 
-![Panel de Splunk - Caso 1](TU_RUTA_DE_IMAGEN/026558b5-70e4-47f4-bdf5-087dfc8a5502.png)
+Al contrastar la actividad, se descubrió un segundo registro crucial dentro del flujo interno. Un analista de la organización (`h.harris@thetrydaily.thm`) envió una notificación al equipo de TI explicando de manera explícita que `hrconnex.thm` es un socio externo legítimo de recursos humanos para la gestión del alta y papeleo de nuevas contrataciones:
 
-Posteriormente, se localizó un correo interno legítimo enviado por el equipo de TI/Operaciones (`h.harris@thetrydaily.thm`) donde se mencionaba explícitamente que `hrconnex.thm` corresponde al proveedor externo oficial de Recursos Humanos de la organización para la gestión de trámites de nuevas contrataciones.
+![Log de Correo Interno Confirmando Legitimidad](Caso%201%20333.png)
+
+Además, al analizar el comportamiento general mediante las búsquedas cruzadas de Splunk, se determinó que los eventos indexados mantenían un único origen perimetral de tipo correo, validando la falta de interacciones web asociadas hacia el exterior.
 
 ### 🛑 Conclusión y Cierre
 *   **Veredicto:** **Falso Positivo (False Positive)**
-*   **Justificación:** La alerta se disparó debido a una clasificación errónea de los filtros de correo automáticos ante un enlace externo. La investigación demostró que el dominio es legítimo, pertenece al flujo del negocio y no existió interacción anómala de red.
-*   **Acciones Recomendadas:** Coordinar con el equipo de ingeniería de correo para agregar el dominio `hrconnex.thm` a la lista de remitentes permitidos (*whitelist*), evitando futuras interrupciones operativas.
+*   **Justificación:** El dominio analizado corresponde a una plataforma legítima necesaria para la operación del negocio. El incidente se generó debido a una firma genérica de los filtros automatizados del correo. No existió ninguna actividad maliciosa ni peligro asociado.
+*   **Recomendación:** Agregar el dominio `hrconnex.thm` a la lista blanca (*whitelist*) del gateway de correo institucional para prevenir alertas recurrentes.
 
 ---
 
 ## 🎯 Caso 2: Phishing de Amazon - Verdadero Positivo Mitigado
 
 ### 🚨 Alerta Inicial
-*   **Clasificación:** Alta - Phishing / Suplantación de Identidad
+El sistema detectó una segunda alerta de correo simulando una notificación urgente de entrega de paquetes.
+
+*   **ID de Alerta:** 8815
+*   **Regla:** Inbound Email Containing Suspicious External Link
 *   **Remitente:** `urgents@amazon.biz`
 *   **Destinatario:** `h.harris@thetrydaily.thm`
-*   **Enlace Malicioso:** `http://bit.ly/3sHkX3da12340`
+*   **Enlace Identificado:** `http://bit.ly/3sHkX3da12340`
+
+![Cola de Alertas - Caso 2](Caso%20N%C2%B0%202.png)
 
 ### 🕵️‍♂️ Investigación y Análisis de Logs
-Al analizar el correo, se identificaron múltiples indicadores de ingeniería social: uso de un dominio no oficial (`.biz`) simulando una marca reconocida (*Typosquatting*) y el uso de un acortador de URL público (`bit.ly`) para ocultar el destino final.
+Se examinó la estructura del correo electrónico malicioso entrante. Se identificaron de inmediato tácticas evidentes de ingeniería social basadas en la urgencia y el uso de un dominio no oficial para suplantar una marca reconocida (`amazon.biz`):
 
-Para medir el impacto, se realizó una búsqueda en Splunk aislando el identificador único del acortador (`3sHkX3da12340`). A diferencia del caso anterior, el panel de campos interesantes reflejó la presencia de múltiples fuentes de datos, confirmando un registro de **`datasource: firewall`**.
+![Log de Correo de Phishing](Correo%20Caso2.png)
 
-![Correlación de Eventos - Caso 2](TU_RUTA_DE_IMAGEN/Interaccion con el correo Caso2.png)
+Para rastrear el impacto y descubrir si el destinatario interactuó con la amenaza, se realizó una consulta en Splunk aislando el código único del acortador web. A diferencia del primer escenario, la búsqueda de red arrojó eventos correlacionados donde se detectó actividad de tráfico web originada por el host afectado hacia el exterior apenas un minuto después de la llegada del correo:
 
-La línea de tiempo correlacionada demostró lo siguiente:
-1.  **16:30:34** - El correo ingresa a la bandeja de entrada del usuario.
-2.  **16:31:48** - El usuario interactúa con el vector de ataque y hace clic en el enlace.
+![Línea de Tiempo y Correlación de Eventos](Captura de pantalla 2026-06-19 114853.png)
 
-Al abrir los detalles del evento del firewall, se validó que la conexión web (`web-browsing`) originada desde la IP interna del host afectado **`10.20.2.17`** hacia la IP de destino externo `67.199.248.11` fue interceptada de manera inmediata.
+Al auditar los campos extendidos del evento de red, localizamos el registro generado por el **Firewall** de la empresa. El evento demostró que el dispositivo interceptó la navegación del endpoint comprometido (**IP de Origen: `10.20.2.17`**) denegando el acceso de forma contundente gracias a las reglas preestablecidas para categorías Web prohibidas:
 
-![Detalles del Bloqueo del Firewall](TU_RUTA_DE_IMAGEN/Detalles de la interaccion Caso2.png)
+*   **Acción:** `blocked`
+*   **Regla Activada:** `Blocked Websites`
+*   **IP de Destino:** `67.199.248.11` (Servidor del enlace acortado)
+
+![Detalles Técnicos del Bloqueo en Firewall](Captura de pantalla 2026-06-19 114838.png)
 
 ### 🛑 Conclusión y Cierre
 *   **Veredicto:** **Verdadero Positivo (True Positive) - Mitigado**
-*   **Justificación:** El correo representaba una amenaza real de suplantación de identidad y el usuario llegó a ejecutar la acción de clic. Sin embargo, el incidente fue completamente mitigado en el perímetro gracias a la regla de seguridad del Firewall (`Rule: Blocked Websites`), la cual aplicó una acción de **`Action: blocked`**, impidiendo que el host fuera comprometido.
-*   **Acciones Recomendadas:** Notificar al usuario sobre el evento para reforzar la concientización en Phishing y proceder al bloqueo preventivo del remitente en la pasarela de correo.
+*   **Justificación:** El correo constituyó una campaña real de ingeniería social encaminada a la suplantación de identidad. Aunque el empleado ejecutó la acción de clicar el link malicioso, las políticas perimetrales del Firewall neutralizaron el vector de ataque antes de que el endpoint estableciera comunicación con el servidor del atacante. El sistema quedó completamente fuera de peligro.
+*   **Recomendación:** Bloquear de forma permanente el dominio remitente `.biz` e iniciar un proceso breve de concientización y formación en técnicas de Phishing para el usuario afectado.
