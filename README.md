@@ -24,10 +24,12 @@ La cola de alertas detectó un evento relacionado con un enlace externo sospecho
 * **Remitente:** `onboarding@hrconnex.thm`
 * **Destinatario:** `j.garcia@thetrydaily.thm`
 
-![Cola de Alertas - Caso 1](Caso1_Cola.png)
+![Cola de Alertas - Caso 1](Caso1_Inicio.png)
 
 ### Investigación y Análisis de Logs
 Al inspeccionar los registros indexados en Splunk para el dominio `hrconnex.thm`, se localizó el flujo de correos asociados. Durante el análisis, se interceptó un correo interno enviado por un miembro del equipo (`h.harris@thetrydaily.thm`) informando a soporte que una nueva contratación no había recibido sus accesos desde el dominio externo en cuestión. En dicho mensaje se aclara explícitamente que `hrconnex.thm` corresponde al proveedor externo oficial de Recursos Humanos de la empresa para la gestión de onboarding y trámites de contratación.
+
+![Cola de Alertas - Caso 1](Caso1_CorreoAfirmacion.png)
 
 Además, la auditoría del panel lateral en Splunk confirmó que el campo `datasource` presentaba un valor de `1` (únicamente registros de tipo `email`), validando la ausencia completa de logs en el Firewall de la compañía, lo que demuestra que no existieron conexiones web salientes ni interacciones anómalas por parte de los usuarios.
 
