@@ -5,7 +5,7 @@ Este repositorio contiene la documentación y el análisis técnico de incidente
 
 ---
 
-## 🛠️ Habilidades y Herramientas Demostradas
+## Habilidades y Herramientas Demostradas
 * **SIEM:** Splunk (Búsqueda, filtrado y correlación cruzada de eventos de red y correo).
 * **Análisis de Logs:** Interpretación de estructuras JSON provenientes de fuentes de correo y firewalls.
 * **Investigación de Amenazas:** Uso de VirusTotal y Cisco Talos Intelligence; identificación de tácticas de ingeniería social (*Typosquatting*).
@@ -13,9 +13,9 @@ Este repositorio contiene la documentación y el análisis técnico de incidente
 
 ---
 
-## 🔍 Caso 1: Análisis de Falso Positivo (Plataforma HR)
+## Caso 1: Análisis de Falso Positivo (Plataforma HR)
 
-### 🚨 Alerta Inicial
+### Alerta Inicial
 La cola de alertas detectó un evento relacionado con un enlace externo sospechoso entrante.
 
 * **ID de Alerta:** 8814
@@ -26,21 +26,21 @@ La cola de alertas detectó un evento relacionado con un enlace externo sospecho
 
 ![Cola de Alertas - Caso 1](Caso1_Cola.png)
 
-### 🕵️‍♂️ Investigación y Análisis de Logs
+### Investigación y Análisis de Logs
 Al inspeccionar los registros indexados en Splunk para el dominio `hrconnex.thm`, se localizó el flujo de correos asociados. Durante el análisis, se interceptó un correo interno enviado por un miembro del equipo (`h.harris@thetrydaily.thm`) informando a soporte que una nueva contratación no había recibido sus accesos desde el dominio externo en cuestión. En dicho mensaje se aclara explícitamente que `hrconnex.thm` corresponde al proveedor externo oficial de Recursos Humanos de la empresa para la gestión de onboarding y trámites de contratación.
 
 Además, la auditoría del panel lateral en Splunk confirmó que el campo `datasource` presentaba un valor de `1` (únicamente registros de tipo `email`), validando la ausencia completa de logs en el Firewall de la compañía, lo que demuestra que no existieron conexiones web salientes ni interacciones anómalas por parte de los usuarios.
 
-### 🛑 Conclusión y Cierre
+### Conclusión y Cierre
 * **Veredicto:** **Falso Positivo (False Positive)**
 * **Justificación:** El dominio analizado es legítimo y pertenece al flujo operativo de la organización. La alerta fue disparada por firmas genéricas automatizadas del gateway de correo. No representa ningún peligro.
 * **Recomendación:** Agregar el dominio `hrconnex.thm` a la lista blanca (*whitelist*) del gateway de correo institucional para mitigar futuras falsas alarmas recurrentes.
 
 ---
 
-## 🎯 Caso 2: Phishing de Amazon - Verdadero Positivo Mitigado
+## Caso 2: Phishing de Amazon - Verdadero Positivo Mitigado
 
-### 🚨 Alerta Inicial
+### Alerta Inicial
 El sistema detectó una alerta de correo electrónico simulando de forma urgente un problema con la entrega de un paquete.
 
 * **ID de Alerta:** 8815
@@ -51,7 +51,7 @@ El sistema detectó una alerta de correo electrónico simulando de forma urgente
 
 ![Cola de Alertas - Caso 2](Caso2_Inicio.png)
 
-### 🕵️‍♂️ Investigación de Amenazas (IOCs)
+### Investigación de Amenazas (IOCs)
 Se analizó el contenido y los metadatos del correo entrante, detectando indicadores claros de suplantación de identidad utilizando un dominio falso (`amazon.biz`) y un enlace acortado para enmascarar el destino original.
 
 ![Log de Correo de Phishing](Caso2_Correo.png)
@@ -75,7 +75,7 @@ Al auditar los detalles técnicos de los eventos extendidos, se identificó un s
 
 ![Detalles del Bloqueo en el Firewall](Caso2_Interaccion2.png)
 
-### 🛑 Conclusión y Cierre
+### Conclusión y Cierre
 * **Veredicto:** **Verdadero Positivo (True Positive) - Mitigado**
 * **Justificación:** El correo constituyó un ataque real de suplantación de identidad y phishing. A pesar de que el empleado interactuó con la amenaza, el incidente fue contenido de inmediato en el perímetro gracias a las políticas del Firewall, impidiendo el compromiso del host o la exfiltración de credenciales.
 * **Recomendación:** Mantener el bloqueo permanente del remitente y del dominio malicioso, y coordinar una sesión breve de concientización sobre Phishing e Ingeniería Social para el usuario afectado.
