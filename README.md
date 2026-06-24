@@ -1,6 +1,6 @@
 # 🛡️ SOC Investigation Lab: Phishing Triaging & SIEM Correlation with Splunk
 
-## 📝 Introducción
+## Introducción
 Este repositorio contiene la documentación y el análisis técnico de incidentes gestionados en un entorno simulado de Centro de Operaciones de Seguridad (SOC) de TryHackMe. El objetivo principal de la investigación fue realizar el triaje de alertas de correo electrónico entrante en una cola de incidentes, investigar los Indicadores de Compromiso (IOCs) mediante herramientas externas de reputación y correlacionar la telemetría utilizando **Splunk** para determinar el impacto real en los endpoints de la organización.
 
 ---
@@ -40,6 +40,8 @@ Además, la auditoría del panel lateral en Splunk confirmó que el campo `datas
 
 ---
 
+
+
 ## Caso 2: Phishing de Amazon - Verdadero Positivo Mitigado
 
 ### Alerta Inicial
@@ -63,7 +65,7 @@ Para complementar la investigación, se consultaron plataformas de inteligencia 
 ![Análisis de Reputación - VirusTotal](Caso2_VirusTotal1.png)
 ![Análisis de Reputación - Cisco Talos](Caso2_Talos.png)
 
-### 📊 Correlación y Análisis del Impacto en Splunk
+### Correlación y Análisis del Impacto en Splunk
 Se realizó una búsqueda en el SIEM aislando el identificador único del acortador web (`3sHkX3da12340`). Los resultados mostraron una línea de tiempo clara en la que se confirma el impacto de la ingeniería social:
 1.  **16:30:34** - El correo fraudulento es depositado en la bandeja del usuario.
 2.  **16:31:48** - El usuario ejecuta la acción de clic en el link malicioso.
@@ -81,3 +83,45 @@ Al auditar los detalles técnicos de los eventos extendidos, se identificó un s
 * **Veredicto:** **Verdadero Positivo (True Positive) - Mitigado**
 * **Justificación:** El correo constituyó un ataque real de suplantación de identidad y phishing. A pesar de que el empleado interactuó con la amenaza, el incidente fue contenido de inmediato en el perímetro gracias a las políticas del Firewall, impidiendo el compromiso del host o la exfiltración de credenciales.
 * **Recomendación:** Mantener el bloqueo permanente del remitente y del dominio malicioso, y coordinar una sesión breve de concientización sobre Phishing e Ingeniería Social para el usuario afectado.
+
+
+---
+
+
+
+## Caso 3: Correlación Perimetral - Bloqueo de Tráfico Web Saliente (Firewall)
+
+### Alerta Inicial
+El sistema de seguridad perimetral gatilló una alerta de alta prioridad al detectar un intento de conexión desde la red interna hacia un dominio categorizado en la lista negra global.
+
+* **ID de Alerta:** 8816
+* **Regla:** Access to Blacklisted External URL Blocked by Firewall
+* **Gravedad:** High
+* **Fuente de datos (Datasource):** Firewall
+* **IP de Origen (SourceIP):** `10.20.2.17`
+* **URL de Destino:** `http://bit.ly/3sHkX3da12340`
+* **IP de Destino:** `67.199.248.11`
+
+![Alerta del Firewall - Caso 3](Caso3_Inicio.png)
+
+### Investigación de Amenazas y Reputación (Threat Intelligence)
+Se extrajo el Indicador de Compromiso (IoC) correspondiente al enlace acortado para auditar su reputación en fuentes externas. Las consultas en **Cisco Talos** y **VirusTotal** confirmaron de manera unánime que la infraestructura del enlace está vinculada a campañas activas de ingeniería social y distribución de Phishing.
+
+![Reputación en Cisco Talos](Caso3_Talos.png)
+![Análisis de URL en VirusTotal](Caso3_VirusTotal.png)
+
+### Correlación en el SIEM (Splunk)
+Para entender el origen del intento de conexión, se ejecutó una búsqueda cruzada en **Splunk** analizando la actividad de la IP interna afectada (`10.20.2.17`). La correlación de eventos permitió reconstruir la cadena de ataque de forma exacta:
+
+1. **16:31:56** - El usuario `h.harris@thetrydaily.thm` recibe en su bandeja de entrada un correo fraudulento que suplanta la identidad de Amazon (analizado en el flujo del Caso 2).
+2. **16:33:10** - El usuario interactúa con el contenido y hace clic en el enlace adjunto. Esto genera la petición de navegación saliente (`Application: web-browsing`).
+
+La telemetría del SIEM demuestra que el control perimetral actuó de forma automática y efectiva frente al IoC, aplicando una acción de **`blocked`** bajo la política institucional de restricciones web.
+
+![Filtro de Eventos Correlacionados en Splunk](Caso3_SIEM.png)
+![Detalle de Logs JSON en Splunk](Caso3_Splunk.png)
+
+### Conclusión y Cierre
+* **Veredicto:** **Verdadero Positivo (True Positive) - Mitigado**
+* **Justificación:** La alerta es completamente legítima y corresponde a la fase de ejecución de un ataque de Phishing dirigido. Aunque el usuario cayó en el engaño e intentó establecer la conexión con el servidor malicioso, las políticas del Firewall impidieron de forma exitosa que se completara el canal de comunicación o la carga del sitio fraudulento.
+* **Recomendación:** Mantener la IP saliente en la lista de bloqueo. Debido a que el usuario intentó navegar activamente al enlace en dos ocasiones consecutivas (registradas en la línea de tiempo), se sugiere realizar un aislamiento preventivo del endpoint para una auditoría local profunda (EDR) y reforzar de manera mandatoria sus credenciales de acceso.
